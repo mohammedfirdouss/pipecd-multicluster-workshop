@@ -1,2 +1,4 @@
-facilitator/.work/
 .DS_Store
+dist/
+# piped treats every *.pipecd.yaml as an app, so solutions must never use that suffix
+solutions/*.pipecd.yaml

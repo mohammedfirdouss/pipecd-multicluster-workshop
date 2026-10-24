@@ -13,14 +13,14 @@ spec:
   plugins:
     - name: kubernetes_multicluster
       port: 7002
-      url: file://__HOME__/.piped/plugins/kubernetes_multicluster
+      url: file://__PLUGINS_DIR__/kubernetes_multicluster
       deployTargets:
         - name: cluster1
           config:
-            kubeConfigPath: __WORK_DIR__/kube/cluster1
+            kubeConfigPath: __KUBE_DIR__/cluster1
         - name: cluster2
           config:
-            kubeConfigPath: __WORK_DIR__/kube/cluster2
+            kubeConfigPath: __KUBE_DIR__/cluster2
     - name: wait
       port: 7004
-      url: file://__HOME__/.piped/plugins/wait
+      url: file://__PLUGINS_DIR__/wait

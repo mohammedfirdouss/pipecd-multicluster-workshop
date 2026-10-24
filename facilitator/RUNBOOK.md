@@ -2,96 +2,95 @@
 
 Pre-DevFest Ibadan 2026 · Cloud Session · Sat 31 Oct 2026
 
-Everything runs on your laptop: three kind clusters (`pipecd` for the control plane, `cluster1` and `cluster2` as deploy targets), piped v1 from source, and a script that previews attendees' PRs. Attendees only need a browser and a GitHub account.
+**Format:** attendees run PipeCD and two kind clusters on their own laptops (Track A). Anyone who can't uses Track B: they open PRs, and your PipeCD previews them. You run the exact same scripts on your Mac for the projector and for Track B.
+
+Nothing can be sent to attendees before the day, so venue Wi-Fi is the main risk. The **USB offline bundle** carries every binary and container image, so Track A laptops only need the internet for GitHub (fork, clone, push) and piped's one-time kubectl download.
 
 ## What's verified and what isn't
 
 Checked against pipe-cd/pipecd on 24 Oct 2026:
 
 - `kubernetes_multicluster` plugin v0.1.0 released 9 Sep 2026. **Alpha.** Say so on stage.
-- Plan preview for the plugin: #6685 (26 May 2026) and #7437 (11 Oct 2026). The pipedv1 plan preview handler is wired in `pkg/app/pipedv1/cmd/piped/piped.go`.
-- The latest *released* pipedv1 image is `pipedv1-exp:v1.0.0-alpha1` (Oct 2025), older than the plan preview work. That's why piped runs from master here.
-- PodSelector traffic routing is all-or-nothing (100% to one variant). Percentages need Istio. The exercises use `all: canary` / `all: primary` only.
+- Plan preview for the plugin: #6685 (26 May 2026), #7437 (11 Oct 2026). The pipedv1 plan preview handler is wired in `pkg/app/pipedv1/cmd/piped/piped.go`.
+- The latest *released* pipedv1 image is `pipedv1-exp:v1.0.0-alpha1` (Oct 2025), older than the plan preview work. So piped and the plugins are built from master (`facilitator/build-tools.sh`).
+- PodSelector traffic routing is all-or-nothing. Percentages need Istio. The exercises use `all: canary` / `all: primary` only.
 - `spec.planner.autoRollback` defaults to `true`.
+- The quickstart control plane images use `imagePullPolicy: IfNotPresent`, so images loaded from the bundle are used without pulling.
 
-**Not verified yet, which is what the rehearsal is for:** the whole flow end to end on this laptop. In particular, plan preview output for a fork PR mirrored to `preview/pr-N`, and the control plane image `v0.58.0` working with piped from master.
+**Not verified until you rehearse:** the whole flow end to end. In particular: control plane `v0.58.0` with piped from master; plan preview output; `kind load image-archive` from the bundle; whether piped's kubectl download (tool registry) works on venue Wi-Fi; and real memory use on an 8 GB laptop.
 
-## 1. One-time setup (do this by Tue 27 Oct)
+## 1. Build (by Mon 26 Oct)
 
 ```sh
-# a. A clean checkout of upstream master, separate from your working clone
-git clone https://github.com/pipe-cd/pipecd.git ~/Desktop/Git-projects/pipecd-master
-
-# b. Start OrbStack, then:
 cd ~/Desktop/Git-projects/pipecd-multicluster-workshop
-./facilitator/setup.sh
 
-# c. Leave this running in its own terminal tab
-./facilitator/port-forward.sh
+# a. Binaries for macOS + Linux, amd64 + arm64 (Windows = Linux build inside WSL2)
+./facilitator/build-tools.sh            # check dist/, then:
+./facilitator/build-tools.sh --release  # publishes them so ./scripts/install-tools.sh can download
+
+# b. Your own setup (start OrbStack first)
+./scripts/install-tools.sh              # downloads from the release you just published
+export PATH="$HOME/.pipecd-workshop/bin:$PATH"
+./scripts/up.sh
 ```
 
-d. Open http://localhost:8080?project=quickstart and log in as `hello-pipecd` / `hello-pipecd`.
-
-e. **Settings > Piped > +ADD** → name it `workshop` → copy the piped ID and the **Base64 encoded** key:
+Then do the Track A setup from `docs/ATTENDEE-GUIDE.md` (piped, app, API key) on your own machine. The repo piped watches is **your** repo, which is also the Track B target.
 
 ```sh
-./facilitator/run-piped.sh <PIPED_ID> <BASE64_PIPED_KEY>   # own terminal tab; later runs need no args
+# c. USB bundle (several GB, about 2× because it holds amd64 + arm64 images)
+./facilitator/make-offline-bundle.sh /Volumes/<USB>/pipecd-bundle
 ```
 
-f. **Applications > +ADD > PIPED v1 ADD FROM SUGGESTIONS** → piped `workshop` → tick **both** `cluster1` and `cluster2` → pick `hello-ibadan` → Save. The first deployment is a quick sync to both clusters.
+Copy it to 4–6 USB sticks. Also put it on your laptop to AirDrop to Mac users.
 
-g. **Settings > API Key > +ADD**, role `READ_WRITE`:
+## 2. Rehearse (by Tue 27 Oct, twice)
 
-```sh
-pbpaste > facilitator/.work/api-key    # after copying the key
-```
+1. **Fresh machine test:** on a second laptop (or a fresh macOS user account), follow Track A from the USB bundle with **Wi-Fi off** except for GitHub. Time it and note every snag.
+2. If you can, test one Windows + WSL2 laptop and one 8 GB laptop.
+3. Run every exercise on Track A, including the Ex 4 rollback.
+4. **Track B:** from a second GitHub account, open a PR against your repo, run `./facilitator/preview-prs.sh`, and check the comment.
+5. **Record your screen** for Ex 2–4. That's the fallback if the room's setup fails.
 
-h. Check: `./facilitator/status.sh` shows 2 `primary` pods on `v0.47.0` in each cluster.
-
-## 2. Rehearsal (do it twice, the second time on a phone hotspot)
-
-1. From a **second GitHub account** (or ask a friend), fork the repo and open a PR for Exercise 1.
-2. `./facilitator/preview-prs.sh`. A comment should appear on the PR saying `QUICK_SYNC`.
-3. Push the Exercise 2 solution to that PR and run it again. Expect `PIPELINE_SYNC`.
-4. Merge the Exercise 3 solution on `main`. Watch it in the UI and in `watch -n2 ./facilitator/status.sh`: canary on cluster1 only, then promoted on both.
-5. Exercise 4 rollback: change the image to `ghcr.io/pipe-cd/helloworld:v0.47.2`, then to a tag that doesn't exist (e.g. `v9.9.9`). During the `WAIT` stage, click **Cancel** with rollback. Expect `K8S_MULTI_ROLLBACK` on both clusters.
-6. **Record your screen** for steps 4–5. That's the fallback if anything breaks on the day.
-7. Time how long a preview takes per PR. 30 PRs at that rate tells you whether one script can keep up.
-
-Write down anything that didn't match this runbook. Fix it here before Saturday.
+Fix this runbook and the guide wherever reality differed.
 
 ## 3. On the day
 
-**T-60 min:** start OrbStack, `port-forward.sh`, `run-piped.sh`. Reset `main` to the starting state (no pipeline, `v0.47.0`) and let it quick-sync. Check `status.sh`. Put the repo link and a QR code on a slide.
+**T-60 min:** OrbStack, `./scripts/up.sh`, `./scripts/run-piped.sh` (no args after the first run). Reset your repo's `main` to the starting state (no pipeline, `v0.47.0`) and let it quick-sync. `./scripts/status.sh`.
 
-**During exercises:** run `./facilitator/preview-prs.sh --watch` in a visible terminal. Previews land as PR comments within about a minute.
+**Start of session:** show the repo link + QR. Hand out USB sticks. Say: "Start Track A setup now, it runs while I talk."
 
-**Live merges:** pick 1–2 good PRs, merge them, show the UI pipeline view next to `status.sh`.
+**During exercises:** keep `./facilitator/preview-prs.sh --watch` running for Track B. Walk the room for Track A setup problems.
 
-**After:** `./facilitator/teardown.sh` deletes the `preview/*` branches. Add `--clusters` to delete the kind clusters.
+**Live demo:** do each exercise on your own machine on the projector after the room has tried it.
 
-## Timings
+**After:** delete the Track B preview branches:
 
-The organisers haven't confirmed the slot length yet.
+```sh
+git ls-remote --heads origin 'preview/*' | awk '{print $2}' | sed 's#refs/heads/##' | xargs -n1 git push origin --delete
+```
+
+## Timings (slot length not confirmed yet)
 
 | | 60 min | 90 min |
 |---|---|---|
-| Intro: PipeCD, plugins, why multi-cluster | 8 | 12 |
-| Setup: fork, tour the files | 5 | 8 |
+| Intro while Track A installs: PipeCD, plugins, why multi-cluster | 10 | 15 |
+| Finish setup: piped, app, API key | 8 | 12 |
 | Ex 1: version bump → `QUICK_SYNC` | 5 | 8 |
 | Ex 2: canary on both clusters | 15 | 20 |
-| Ex 3: one cluster first | 12 | 20 |
-| Ex 4: live merge + rollback demo | 8 | 10 |
-| Wrap-up, how to contribute, Q&A | 7 | 12 |
+| Ex 3: one cluster first | 10 | 15 |
+| Ex 4: rollback | 5 | 8 |
+| Wrap-up: the two real bugs, the LFX path, how to contribute | 7 | 12 |
 
-At 60 minutes, make Ex 3 a walkthrough of the solution instead of a hands-on exercise if the room is slow.
+At 60 minutes, demo Ex 3 on the projector instead of running it hands-on.
 
 ## If something breaks
 
 | Problem | Do this |
 |---|---|
-| Venue Wi-Fi down | Phone hotspot for your laptop. Attendees pair up on whoever has data. Images are pre-loaded into the clusters. |
-| Previews slow or stuck | Keep going. Review 3–4 PRs by eye on screen, then run the preview on one live. |
-| piped crashes | Restart `run-piped.sh`. It keeps its config. |
-| Everything is down | Play the recording from the rehearsal and walk through `solutions/`. |
-| An attendee can't fork | Pair them with a neighbour. |
+| Laptop has no Docker, or under 8 GB RAM | Track B, or pair with a neighbour |
+| Docker install needed on the day | Don't. Docker Desktop is a large download. Track B. |
+| Control plane pods stuck `Pending` | Low memory. `./scripts/down.sh`, close other apps, retry; else Track B |
+| `run-piped.sh` can't connect | Is `up.sh`'s port-forward alive? `curl localhost:8080`. Re-run `up.sh`. |
+| App not in "suggestions" | piped is watching the fork's `main`. Check the fork URL in the piped logs. |
+| Previews slow or stuck (Track B) | Review a few PRs by eye on screen and preview one live |
+| Everything down | Play the rehearsal recording and walk through `solutions/` |
