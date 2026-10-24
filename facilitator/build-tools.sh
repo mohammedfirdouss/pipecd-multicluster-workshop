@@ -1,53 +1,24 @@
 #!/usr/bin/env bash
-# Builds every binary attendees need, for macOS and Linux (amd64 + arm64; Windows
-# users run the Linux build inside WSL2), into dist/<os>-<arch>/ and one tarball
-# per platform. piped and the plugins are built from pipe-cd/pipecd master.
-#
-#   ./facilitator/build-tools.sh            build only
-#   ./facilitator/build-tools.sh --release  also publish the tarballs as GitHub release $TOOLS_RELEASE
+# Builds piped + the two plugins from pipe-cd/pipecd master for macOS and Linux,
+# and publishes them as the "tools" release that scripts/setup.sh downloads.
+# (The latest released piped v1 is from Oct 2025, older than the plan preview feature.)
 set -euo pipefail
-source "$(dirname "$0")/../scripts/env.sh"
 
-DIST="$REPO_DIR/dist"
-SRC="$WORKSHOP_HOME/pipecd-src"
-KUBECTL_VERSION="${KUBECTL_VERSION:-$(curl -fsSL https://dl.k8s.io/release/stable.txt)}"
-platforms=(darwin-arm64 darwin-amd64 linux-amd64 linux-arm64)
+src=/tmp/pipecd-src
+[ -d $src ] || git clone -q --depth 1 https://github.com/pipe-cd/pipecd.git $src
+git -C $src pull -q
+out=/tmp/workshop-tools && rm -rf $out && mkdir -p $out
 
-command -v go >/dev/null || { echo "needs Go 1.26+"; exit 1; }
-if [ -d "$SRC/.git" ]; then
-  git -C "$SRC" fetch -q --depth 1 origin "$PIPECD_REF" && git -C "$SRC" checkout -q FETCH_HEAD
-else
-  git clone -q --depth 1 --branch "$PIPECD_REF" https://github.com/pipe-cd/pipecd.git "$SRC"
-fi
-commit=$(git -C "$SRC" log -1 --format='%h %cd' --date=short)
-echo "==> pipe-cd/pipecd $PIPECD_REF at $commit"
-
-rm -rf "$DIST" && mkdir -p "$DIST"
-for p in "${platforms[@]}"; do
-  goos=${p%-*}; goarch=${p#*-}; out="$DIST/$p"; mkdir -p "$out"
-  echo "==> $p"
-  (cd "$SRC" && CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch go build -trimpath -ldflags '-s -w' -o "$out/piped" ./cmd/pipedv1)
-  for plugin in kubernetes_multicluster wait; do
-    (cd "$SRC/pkg/app/pipedv1/plugin/$plugin" && CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch go build -trimpath -ldflags '-s -w' -o "$out/$plugin" .)
-  done
-  curl -fsSL -o "$out/kind" "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-${goos}-${goarch}"
-  curl -fsSL -o "$out/kubectl" "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/${goos}/${goarch}/kubectl"
-  curl -fsSL -o "$out/pipectl" \
-    "https://github.com/pipe-cd/pipecd/releases/download/${PIPECTL_VERSION}/pipectl_${PIPECTL_VERSION}_${goos}_${goarch}"
-  chmod +x "$out"/*
-  tar -czf "$DIST/workshop-tools-$p.tar.gz" -C "$DIST" "$p"
+for p in darwin-arm64 darwin-amd64 linux-amd64 linux-arm64; do
+  echo "building $p"
+  export GOOS=${p%-*} GOARCH=${p#*-} CGO_ENABLED=0
+  mkdir -p $out/$p
+  (cd $src && go build -o $out/$p/piped ./cmd/pipedv1)
+  (cd $src/pkg/app/pipedv1/plugin/kubernetes_multicluster && go build -o $out/$p/kubernetes_multicluster .)
+  (cd $src/pkg/app/pipedv1/plugin/wait && go build -o $out/$p/wait .)
+  tar -czf $out/workshop-tools-$p.tar.gz -C $out/$p .
 done
 
-cat > "$DIST/VERSIONS.txt" <<EOF
-piped v1 + plugins: pipe-cd/pipecd $PIPECD_REF at $commit
-pipectl: $PIPECTL_VERSION
-kind: $KIND_VERSION
-kubectl: $KUBECTL_VERSION
-EOF
-cat "$DIST/VERSIONS.txt"
-
-if [ "${1:-}" = "--release" ]; then
-  gh release create "$TOOLS_RELEASE" --repo "$UPSTREAM_REPO" \
-    --title "Workshop tools ($commit)" --notes-file "$DIST/VERSIONS.txt" \
-    "$DIST"/workshop-tools-*.tar.gz
-fi
+gh release create tools $out/workshop-tools-*.tar.gz \
+  --repo mohammedfirdouss/pipecd-multicluster-workshop \
+  --title "Workshop tools" --notes "piped v1 + plugins built from pipe-cd/pipecd $(git -C $src log -1 --format='%h (%cd)' --date=short)"
