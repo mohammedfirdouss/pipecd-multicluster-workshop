@@ -1,0 +1,26 @@
+apiVersion: pipecd.dev/v1beta1
+kind: Piped
+spec:
+  projectID: quickstart
+  pipedID: __PIPED_ID__
+  pipedKeyData: __PIPED_KEY_DATA__
+  apiAddress: __CONTROL_PLANE_ADDR__
+  syncInterval: 30s
+  repositories:
+    - repoId: workshop
+      remote: __WORKSHOP_REPO_URL__
+      branch: __BASE_BRANCH__
+  plugins:
+    - name: kubernetes_multicluster
+      port: 7002
+      url: file://__HOME__/.piped/plugins/kubernetes_multicluster
+      deployTargets:
+        - name: cluster1
+          config:
+            kubeConfigPath: __WORK_DIR__/kube/cluster1
+        - name: cluster2
+          config:
+            kubeConfigPath: __WORK_DIR__/kube/cluster2
+    - name: wait
+      port: 7004
+      url: file://__HOME__/.piped/plugins/wait

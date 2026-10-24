@@ -1,0 +1,15 @@
+apiVersion: pipecd.dev/v1beta1
+kind: Application
+spec:
+  name: hello-ibadan
+  labels:
+    workshop: devfest-ibadan-2026
+  # No pipeline yet: PipeCD will QUICK_SYNC this app to every cluster at once.
+  # Exercise 1 asks you to add one.
+  plugins:
+    kubernetes_multicluster:
+      input:
+        manifests:
+          - deployment.yaml
+          - service.yaml
+        kubectlVersion: 1.32.2

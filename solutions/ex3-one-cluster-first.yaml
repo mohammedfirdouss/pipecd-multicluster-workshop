@@ -1,0 +1,42 @@
+apiVersion: pipecd.dev/v1beta1
+kind: Application
+spec:
+  name: hello-ibadan
+  labels:
+    workshop: devfest-ibadan-2026
+  pipeline:
+    stages:
+      # 1. Canary on cluster1 only. cluster2 is untouched for now.
+      - name: K8S_MULTI_CANARY_ROLLOUT
+        with:
+          replicas: 1
+          multiTargets:
+            - cluster1
+      # 2. Send all of cluster1's traffic to the canary (PodSelector routing is all-or-nothing).
+      - name: K8S_MULTI_TRAFFIC_ROUTING
+        with:
+          all: canary
+          multiTargets:
+            - cluster1
+      - name: WAIT
+        with:
+          duration: 30s
+      # 3. Happy with cluster1? Promote on every cluster.
+      - name: K8S_MULTI_PRIMARY_ROLLOUT
+      # 4. Point traffic back at the (now new) primary, then clean up the canary.
+      - name: K8S_MULTI_TRAFFIC_ROUTING
+        with:
+          all: primary
+          multiTargets:
+            - cluster1
+      - name: K8S_MULTI_CANARY_CLEAN
+        with:
+          multiTargets:
+            - cluster1
+  plugins:
+    kubernetes_multicluster:
+      input:
+        manifests:
+          - deployment.yaml
+          - service.yaml
+        kubectlVersion: 1.32.2
