@@ -1,35 +1,32 @@
 #!/usr/bin/env bash
-# Runs PipeCD plan preview on every open PR and posts the result as a PR comment.
+# FALLBACK TRACK: for attendees who can't run the stack on their laptop.
+# Runs PipeCD plan preview on every open PR against the workshop repo, using the
+# facilitator's control plane and clusters, and posts the result as a PR comment.
 #
 # Attendees open PRs from their forks. piped can only preview branches that live
 # in the repo it watches, so each PR head is mirrored to a `preview/pr-<N>`
-# branch on the workshop repo first. A PR is previewed again only when its head
-# commit changes.
+# branch first. A PR is previewed again only when its head commit changes.
 #
-# Usage: ./preview-prs.sh          one pass over all open PRs
-#        ./preview-prs.sh --watch  keep polling every 20s
+# Usage: ./facilitator/preview-prs.sh          one pass over all open PRs
+#        ./facilitator/preview-prs.sh --watch  keep polling every 20s
 set -euo pipefail
-source "$(dirname "$0")/env.sh"
+source "$(dirname "$0")/../scripts/env.sh"
 
-PIPECTL="$WORK_DIR/bin/pipectl"
-MIRROR="$WORK_DIR/mirror"
-SEEN="$WORK_DIR/previewed"
+MIRROR="$WORKSHOP_HOME/mirror"
+SEEN="$WORKSHOP_HOME/previewed"
 touch "$SEEN"
-[ -s "$API_KEY_FILE" ] || { echo "Put a READ_WRITE API key in $API_KEY_FILE (Settings > API Key)"; exit 1; }
-
-if [ ! -d "$MIRROR/.git" ]; then
-  git clone -q "git@github.com:${WORKSHOP_REPO}.git" "$MIRROR"
-fi
+[ -s "$API_KEY_FILE" ] || { echo "Put a READ_WRITE API key in $API_KEY_FILE (console: Settings > API Key)"; exit 1; }
+[ -d "$MIRROR/.git" ] || git clone -q "git@github.com:${WORKSHOP_REPO}.git" "$MIRROR"
 
 preview_one() {
   local n=$1 sha=$2 author=$3
-  local branch="preview/pr-$n" out="$WORK_DIR/preview-pr-$n.txt"
+  local branch="preview/pr-$n" out="$WORKSHOP_HOME/preview-pr-$n.txt" status
   echo "==> PR #$n by @$author at ${sha:0:7}"
 
   git -C "$MIRROR" fetch -q origin "pull/$n/head"
   git -C "$MIRROR" push -q -f origin "FETCH_HEAD:refs/heads/$branch"
 
-  if "$PIPECTL" plan-preview \
+  if pipectl plan-preview \
       --address="$CONTROL_PLANE_ADDR" --insecure \
       --api-key-file="$API_KEY_FILE" \
       --repo-remote-url="$WORKSHOP_REPO_URL" \
@@ -39,18 +36,12 @@ preview_one() {
       --out="$out" 2>"$out.err"; then
     status="Plan preview for \`${sha:0:7}\`"
   else
-    status="Plan preview **failed** for \`${sha:0:7}\` (check your YAML indentation, then push again)"
+    status="Plan preview **failed** for \`${sha:0:7}\`. Check your YAML indentation, then push again."
     [ -s "$out" ] || cp "$out.err" "$out"
   fi
 
-  {
-    echo "$status"
-    echo
-    echo '```'
-    cat "$out"
-    echo '```'
-  } | gh pr comment "$n" --repo "$WORKSHOP_REPO" --body-file -
-
+  { echo "$status"; echo; echo '```'; cat "$out"; echo '```'; } \
+    | gh pr comment "$n" --repo "$WORKSHOP_REPO" --body-file -
   echo "$n $sha" >> "$SEEN"
 }
 
