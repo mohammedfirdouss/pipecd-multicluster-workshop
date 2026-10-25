@@ -34,7 +34,7 @@ kubectl --context kind-cluster1 create namespace pipecd 2>/dev/null || true
 # Pinned to the same commit as piped, so upstream changes (e.g. a MinIO fix being merged) can't break this.
 curl -fsSL https://raw.githubusercontent.com/pipe-cd/pipecd/5b4128201a52d67ddfd11756c5a7dc856c370e32/quickstart/manifests/control-plane.yaml \
   | sed -E -e 's#ghcr.io/pipe-cd/pipecd:v[0-9.]+#ghcr.io/pipe-cd/pipecd:v0.57.0-73-g5b41282#' \
-           -e 's#minio/minio:RELEASE[^"[:space:]]*#cgr.dev/chainguard/minio:latest#' \
+           -e 's#minio/minio:RELEASE[^"[:space:]]*#cgr.dev/chainguard/minio@sha256:73297936408b731668ca0e835ac9add1a35cb6026a125c2f0cd476d9ef48222c#' \
   | kubectl --context kind-cluster1 -n pipecd apply -f - >/dev/null
 kubectl --context kind-cluster1 -n pipecd patch deploy pipecd-minio --type=json -p='[
   {"op":"add","path":"/spec/template/spec/containers/0/env/-","value":{"name":"MINIO_ROOT_USER","valueFrom":{"secretKeyRef":{"name":"pipecd","key":"minio-access-key"}}}},
