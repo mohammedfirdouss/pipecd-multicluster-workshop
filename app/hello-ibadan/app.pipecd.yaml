@@ -4,8 +4,20 @@ spec:
   name: hello-ibadan
   labels:
     workshop: devfest-ibadan-2026
-  # No pipeline yet: PipeCD will QUICK_SYNC this app to every cluster at once.
-  # Exercise 1 asks you to add one.
+  pipeline:
+    stages:
+      # 1. Start one pod of the new version next to the old one, on every cluster.
+      - name: K8S_MULTI_CANARY_ROLLOUT
+        with:
+          replicas: 1
+      # 2. Give it 30 seconds. In real life this is where analysis or approval goes.
+      - name: WAIT
+        with:
+          duration: 30s
+      # 3. Promote: the new version becomes the primary on every cluster.
+      - name: K8S_MULTI_PRIMARY_ROLLOUT
+      # 4. Remove the canary pods.
+      - name: K8S_MULTI_CANARY_CLEAN
   plugins:
     kubernetes_multicluster:
       input:
