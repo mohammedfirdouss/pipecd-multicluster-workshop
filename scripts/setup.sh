@@ -31,7 +31,8 @@ echo "3/4  PipeCD control plane (inside cluster1)"
 #  - the control plane image must match the commit piped was built from (see facilitator/build-tools.sh)
 #  - its MinIO image was removed from Docker Hub (pipe-cd/pipecd#7380), so use Chainguard's
 kubectl --context kind-cluster1 create namespace pipecd 2>/dev/null || true
-curl -fsSL https://raw.githubusercontent.com/pipe-cd/pipecd/master/quickstart/manifests/control-plane.yaml \
+# Pinned to the same commit as piped, so upstream changes (e.g. a MinIO fix being merged) can't break this.
+curl -fsSL https://raw.githubusercontent.com/pipe-cd/pipecd/5b4128201a52d67ddfd11756c5a7dc856c370e32/quickstart/manifests/control-plane.yaml \
   | sed -E -e 's#ghcr.io/pipe-cd/pipecd:v[0-9.]+#ghcr.io/pipe-cd/pipecd:v0.57.0-73-g5b41282#' \
            -e 's#minio/minio:RELEASE[^"[:space:]]*#cgr.dev/chainguard/minio:latest#' \
   | kubectl --context kind-cluster1 -n pipecd apply -f - >/dev/null
