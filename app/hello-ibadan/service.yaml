@@ -5,6 +5,7 @@ metadata:
 spec:
   selector:
     app: hello-ibadan
+    pipecd.dev/variant: primary   # traffic routing switches this between primary and canary
   ports:
     - protocol: TCP
       port: 9085
