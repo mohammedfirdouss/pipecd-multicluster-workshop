@@ -1,30 +1,39 @@
 # Facilitator runbook
 
+Attendees run PipeCD and two clusters on their own laptops. Anyone who can't uses the no-install way: they open a PR, and your PipeCD comments a preview.
+
+## What the test on 25 Oct showed
+
+- **Versions must match:** control plane `ghcr.io/pipe-cd/pipecd:v0.57.0-73-g5b41282`, with piped, pipectl and plugins built from the same commit (`5b41282`). Newer piped gets stuck at PENDING.
+- **PipeCD's quickstart MinIO image is gone** (pipe-cd/pipecd#7380). `setup.sh` uses Chainguard's instead.
+- **`service.yaml` needs `pipecd.dev/variant: primary`**, or traffic routing fails.
+- **Downloads:** about 1.2 GB per laptop. Memory: about 1.9 GB.
+- Without a check (`ANALYSIS`) step, a broken update still says SUCCESS. Use a 2-minute wait for the undo exercise.
+
 ## Before the day
 
-1. `./facilitator/build-tools.sh` builds piped + plugins and publishes the `tools` release that `setup.sh` downloads. Re-run it if PipeCD master gets a fix you need.
-2. Do the whole attendee guide yourself, every exercise.
-3. Do it again on a second laptop if you can.
-4. Record your screen doing exercises 2–4. That's your backup if the room's setup fails.
+1. On good internet, run `./facilitator/build-tools.sh`. It publishes the `tools` release that `setup.sh` downloads. **The setup won't work for attendees without it.**
+2. Record your screen doing Exercises 2–4, as a backup.
 
 ## On the day
 
-- One hour before: start Docker, `./scripts/setup.sh`, `./scripts/piped.sh`. Reset `main` to the start (no pipeline, image `v0.47.0`).
-- Start of session: show the repo link. Tell people to run `setup.sh` now, while you do the intro.
-- During exercises: run `./facilitator/preview-prs.sh` every few minutes for the people without Docker.
-- After: delete the `preview/pr-*` branches.
+1. **First thing:** show the repo link and say "fork, clone, run `./scripts/setup.sh` now". Then do your intro while it downloads.
+2. Your own laptop: start OrbStack, then `kubectl --context kind-cluster1 -n pipecd port-forward svc/pipecd 8080 &` and `./scripts/piped.sh`.
+3. Walk around and help with setup.
+4. For people on the no-install way, run `./facilitator/preview-prs.sh` every few minutes.
+5. Do each exercise on the projector after the room has tried it.
 
 ## Things to say
 
 - The multi-cluster plugin is **alpha**.
-- Without Istio, traffic routing is all-or-nothing (100% to one version).
+- Without Istio, users can only go to one version at a time.
 
 ## If something breaks
 
 | Problem | Fix |
 |---|---|
-| No Docker, or not enough memory | Use the "Without Docker" path in the guide, or pair up |
-| Control plane pods stuck `Pending` | Not enough memory. Close other apps, `cleanup.sh`, `setup.sh` again |
-| `piped.sh` can't connect | `setup.sh` again (it restarts the console port-forward) |
-| App missing from suggestions | piped watches the fork's `main`. Check the repo URL in piped's output |
-| Everything is down | Play the recording |
+| No Docker, or slow download | No-install way, or pair with a neighbour |
+| Setup stuck at "waiting for it to start" | Still downloading. Check with `kubectl --context kind-cluster1 get pods -n pipecd` |
+| `piped.sh` can't connect | Run `./scripts/setup.sh` again (it restarts the connection) |
+| Deployment stuck at PENDING | Wrong piped version. Delete `~/.pipecd-workshop/bin/piped` and run `setup.sh` again |
+| App missing under suggestions | Wait a minute. piped reads your fork's `main` every 30 seconds |
