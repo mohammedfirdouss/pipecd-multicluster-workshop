@@ -15,8 +15,15 @@ case "$arch" in x86_64) arch=amd64 ;; aarch64) arch=arm64 ;; esac
 
 echo "1/4  piped, pipectl and plugins"
 if [ ! -x "$HOME_DIR/bin/piped" ]; then
-  curl -fL --progress-bar -o /tmp/workshop-tools.tar.gz \
-    "https://github.com/mohammedfirdouss/pipecd-multicluster-workshop/releases/download/tools/workshop-tools-$os-$arch.tar.gz"
+  rm -f /tmp/workshop-tools.tar.gz
+  # Weak Wi-Fi drops connections, so try up to 5 times, carrying on from where it stopped (-C -).
+  for try in 1 2 3 4 5; do
+    curl -fL --progress-bar -C - -o /tmp/workshop-tools.tar.gz \
+      "https://github.com/mohammedfirdouss/pipecd-multicluster-workshop/releases/download/tools/workshop-tools-$os-$arch.tar.gz" && break
+    [ "$try" = 5 ] && { echo "Download failed. Check your internet and run ./scripts/setup.sh again."; exit 1; }
+    echo "     connection dropped, trying again..."
+    sleep 3
+  done
   tar -xzf /tmp/workshop-tools.tar.gz -C "$HOME_DIR/bin"
 fi
 
@@ -42,8 +49,9 @@ kubectl --context kind-cluster1 -n pipecd patch deploy pipecd-minio --type=json 
   {"op":"add","path":"/spec/template/spec/volumes","value":[{"name":"data","emptyDir":{}}]},
   {"op":"add","path":"/spec/template/spec/containers/0/volumeMounts","value":[{"name":"data","mountPath":"/data"}]}
 ]' >/dev/null 2>&1 || true   # already patched on re-runs
-echo "     waiting for it to start (a few minutes the first time)..."
-kubectl --context kind-cluster1 -n pipecd wait --for=condition=Ready pod --all --timeout=15m
+echo "     downloading and starting it. On slow internet this can take 30+ minutes; leave it running..."
+kubectl --context kind-cluster1 -n pipecd wait --for=condition=Ready pod --all --timeout=45m \
+  || { echo "Still not ready. Run ./scripts/setup.sh again: it keeps what it has downloaded."; exit 1; }
 
 echo "4/4  opening the console on localhost:8080"
 pkill -f "port-forward svc/pipecd" 2>/dev/null || true
