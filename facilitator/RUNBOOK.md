@@ -7,7 +7,7 @@ Attendees run PipeCD and two clusters on their own laptops. Anyone who can't use
 - **Versions must match:** control plane `ghcr.io/pipe-cd/pipecd:v0.57.0-73-g5b41282`, with piped, pipectl and plugins built from the same commit (`5b41282`). piped built from newer code (for example master) leaves deployments stuck at PENDING.
 - **PipeCD's quickstart MinIO image is gone** (pipe-cd/pipecd#7380). `setup.sh` uses Chainguard's instead.
 - **`service.yaml` needs `pipecd.dev/variant: primary`**, or traffic routing fails.
-- **Downloads:** about 1.2 GB per laptop. Memory: about 1.9 GB.
+- **Downloads:** about 1.2 GB per laptop for `setup.sh`, plus about 105 MB when piped runs its first deployment (its own kubectl and helm). Memory: about 1.9 GB.
 - Without a check (`ANALYSIS`) step, a broken update still says SUCCESS. Use a 2-minute wait for the undo exercise.
 
 ## Before the day
@@ -58,3 +58,5 @@ Rules of thumb:
 | `piped.sh` can't connect | Check nothing else uses port 8080 (`lsof -i :8080`), then run `./scripts/setup.sh` again (it restarts the port-forward) |
 | Deployment stuck at PENDING | Wrong piped version. Delete `~/.pipecd-workshop/bin/piped` and run `setup.sh` again |
 | App missing under suggestions | Wait a minute. piped reads your fork's `main` every 30 seconds |
+| `status.sh` empty after adding the app | First deployment still running: piped is downloading kubectl and helm. Check under **Deployments** |
+| Preview says "There are no updated applications" | The app isn't added in your PipeCD, or the PR doesn't change `app/hello-ibadan/` |
