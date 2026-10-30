@@ -126,7 +126,7 @@ git revert --no-edit HEAD
 git push
 ```
 
-Within about a minute, `status.sh` shows both clusters back on `v0.47.1` with no `Pending` pods.
+Within 1–2 minutes (the pipeline runs again), `status.sh` shows both clusters back on `v0.47.1` with no `Pending` pods.
 
 ## No-install way
 
