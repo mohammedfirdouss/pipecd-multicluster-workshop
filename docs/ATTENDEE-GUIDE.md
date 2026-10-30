@@ -31,7 +31,7 @@ It downloads about **1.2 GB**, so start it straight away. Use your hotspot or th
 4. **Add the app:**
    - Go to **Applications → + ADD → PIPED V1 ADD FROM SUGGESTIONS**.
    - Pick your piped. Under **Deploy targets**, pick **cluster1** and **cluster2**. Pick `hello-ibadan`. Then **Save**.
-   - After a minute or two, check that both clusters run it:
+   - The first deployment takes a few minutes: piped first downloads its own kubectl and helm (about 105 MB), then the app image. Check that both clusters run it (each pod should say `Running`):
      ```sh
      ./scripts/status.sh
      ```
