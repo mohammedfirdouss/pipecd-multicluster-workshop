@@ -2,7 +2,7 @@
 
 **Build a Multi-Cluster Kubernetes Rollout Pipeline with PipeCD**. Pre-DevFest Ibadan 2026, Cloud Session, Saturday 31 October 2026.
 
-You run PipeCD and two kind clusters on your laptop, deploy one app to both clusters, and work through four exercises: plan preview, canary rollout, one cluster first, and rollback.
+You run PipeCD and two kind clusters on your laptop, deploy one app to both clusters, and work through four exercises: plan preview, canary rollout, one cluster first, and undoing a bad update.
 
 **Start here: [docs/ATTENDEE-GUIDE.md](docs/ATTENDEE-GUIDE.md).** Run `./scripts/setup.sh` first. The first run downloads about 1.2 GB.
 
