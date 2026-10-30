@@ -4,7 +4,7 @@ Today you'll run PipeCD and **two Kubernetes clusters on your own laptop**. You'
 
 ## Start the setup now
 
-It downloads about **1.2 GB**, so start it straight away. Use your hotspot or the Wi-Fi. It runs while you listen to the intro.
+It downloads about **1.2 GB**, so start it straight away. Use your hotspot or the Wi-Fi. On slow internet it can take **30 minutes or more**. Leave it running and follow along on the projector. If it's still running when the exercises start, do them [the no-install way](#no-install-way) and switch over when it says **Done**.
 
 **You need:**
 - Docker running (Docker Desktop, OrbStack or Rancher Desktop). On Windows, use WSL2.
