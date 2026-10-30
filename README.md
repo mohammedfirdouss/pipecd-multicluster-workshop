@@ -4,6 +4,8 @@
 
 You run PipeCD and two kind clusters on your laptop, deploy one app to both clusters, and work through four exercises: plan preview, canary rollout, one cluster first, and undoing a bad update.
 
+![You push to your fork on GitHub. piped on your laptop reads it and deploys hello-ibadan to cluster1 and cluster2. The PipeCD console runs in cluster1.](docs/img/how-it-works.svg)
+
 **Start here: [docs/ATTENDEE-GUIDE.md](docs/ATTENDEE-GUIDE.md).** Run `./scripts/setup.sh` first. The first run downloads about 1.2 GB.
 
 | Folder | What's in it |
@@ -13,6 +15,6 @@ You run PipeCD and two kind clusters on your laptop, deploy one app to both clus
 | `solutions/` | Answers to Exercises 2 and 3 |
 | `facilitator/` | Runbook and scripts for the workshop host |
 
-Tested end to end on macOS (Apple Silicon) with OrbStack on 25 October 2026. On Windows, run everything inside WSL2.
+Tested end to end on macOS (Apple Silicon) with OrbStack on 25 and 30 October 2026. On Windows, run everything inside WSL2.
 
 The `kubernetes_multicluster` plugin is in alpha.
