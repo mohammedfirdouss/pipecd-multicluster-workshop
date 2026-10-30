@@ -2,13 +2,13 @@
 
 Today you'll run PipeCD and **two Kubernetes clusters on your own laptop**. You'll update one app on both clusters, check what will change first, watch it go live step by step, then undo a bad update.
 
-## Start the setup now ⏱️
+## Start the setup now
 
 It downloads about **1.2 GB**, so start it straight away. Use your hotspot or the Wi-Fi. It runs while you listen to the intro.
 
 **You need:**
 - Docker running (Docker Desktop, OrbStack or Rancher Desktop). On Windows, use WSL2.
-- `kind`, `kubectl` and `git`
+- `kind`, `kubectl`, `git` and `curl`
 - About 4 GB of free memory
 - A GitHub account
 
@@ -48,7 +48,7 @@ It downloads about **1.2 GB**, so start it straight away. Use your hotspot or th
 git switch -c ex1                              # 1. new branch
 # 2. edit files in app/hello-ibadan/
 git commit -am "ex1"
-./scripts/preview.sh                           # 3. what would change?
+./scripts/preview.sh                           # 3. push the branch, see what would change
 git switch main && git merge ex1 && git push   # 4. deploy it
 ./scripts/status.sh                            # 5. look at both clusters
 ```

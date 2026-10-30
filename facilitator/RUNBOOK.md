@@ -4,7 +4,7 @@ Attendees run PipeCD and two clusters on their own laptops. Anyone who can't use
 
 ## What the test on 25 Oct showed
 
-- **Versions must match:** control plane `ghcr.io/pipe-cd/pipecd:v0.57.0-73-g5b41282`, with piped, pipectl and plugins built from the same commit (`5b41282`). Newer piped gets stuck at PENDING.
+- **Versions must match:** control plane `ghcr.io/pipe-cd/pipecd:v0.57.0-73-g5b41282`, with piped, pipectl and plugins built from the same commit (`5b41282`). piped built from newer code (for example master) leaves deployments stuck at PENDING.
 - **PipeCD's quickstart MinIO image is gone** (pipe-cd/pipecd#7380). `setup.sh` uses Chainguard's instead.
 - **`service.yaml` needs `pipecd.dev/variant: primary`**, or traffic routing fails.
 - **Downloads:** about 1.2 GB per laptop. Memory: about 1.9 GB.
@@ -18,7 +18,7 @@ Attendees run PipeCD and two clusters on their own laptops. Anyone who can't use
 ## On the day
 
 1. **First thing:** show the repo link and say "fork, clone, run `./scripts/setup.sh` now". Then do your intro while it downloads.
-2. Your own laptop: start OrbStack, then `kubectl --context kind-cluster1 -n pipecd port-forward svc/pipecd 8080 &` and `./scripts/piped.sh`.
+2. Your own laptop: start OrbStack and stop anything else using port 8080. Then run `kubectl --context kind-cluster1 -n pipecd port-forward svc/pipecd 8080 &` and `./scripts/piped.sh` (no arguments: it reuses the saved config).
 3. Walk around and help with setup.
 4. For people on the no-install way, run `./facilitator/preview-prs.sh` every few minutes.
 5. Do each exercise on the projector after the room has tried it.
@@ -34,6 +34,6 @@ Attendees run PipeCD and two clusters on their own laptops. Anyone who can't use
 |---|---|
 | No Docker, or slow download | No-install way, or pair with a neighbour |
 | Setup stuck at "waiting for it to start" | Still downloading. Check with `kubectl --context kind-cluster1 get pods -n pipecd` |
-| `piped.sh` can't connect | Run `./scripts/setup.sh` again (it restarts the connection) |
+| `piped.sh` can't connect | Check nothing else uses port 8080 (`lsof -i :8080`), then run `./scripts/setup.sh` again (it restarts the port-forward) |
 | Deployment stuck at PENDING | Wrong piped version. Delete `~/.pipecd-workshop/bin/piped` and run `setup.sh` again |
 | App missing under suggestions | Wait a minute. piped reads your fork's `main` every 30 seconds |
