@@ -30,6 +30,14 @@ No slides needed. The setup download can take 30+ minutes on slow internet, so t
 | 45–80 min | Exercises 1–4. Run `./facilitator/preview-prs.sh` every few minutes for no-install PRs | Exercises, on their laptop or the no-install way |
 | 80–90 min | Recap, questions, `cleanup.sh` | |
 
+Your laptop runs the demo from a test copy of this repo (`workshop-test`), so your live merges never change this repo's `main`. Run `preview-prs.sh` from that copy too: it picks up PRs opened on this repo. Before the no-install previews start (around minute 35), put the test copy's `main` back to the starting state, so previews compare against what attendees forked:
+
+```sh
+cd ~/Desktop/workshop-test
+git fetch https://github.com/mohammedfirdouss/pipecd-multicluster-workshop.git main
+git push -f origin FETCH_HEAD:main && git reset --hard FETCH_HEAD
+```
+
 Rules of thumb:
 - Anyone still waiting at minute 45 does the no-install way and switches to their laptop when setup says **Done**.
 - Do each exercise on the projector after the room has tried it.
