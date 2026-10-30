@@ -122,9 +122,10 @@ Note: PipeCD only checks that the new version works if you add a check step (`AN
 ## No-install way
 
 1. Fork this repo, open your fork, and press `.` to edit in the browser.
-2. Make the exercise change, and save it to a new branch.
-3. Open a pull request to `mohammedfirdouss/pipecd-multicluster-workshop`, branch `main`. Put your name in the title.
-4. The facilitator's PipeCD posts the preview as a comment on your PR within a few minutes.
+2. Make the exercise change and commit it. Committing to your fork's `main` is fine.
+3. On your fork's GitHub page, click **Contribute → Open pull request**. Check the base is `mohammedfirdouss/pipecd-multicluster-workshop`, branch `main`. Put your name in the title.
+4. For the next exercise, commit again to the same place. Your PR updates, and you get a new preview.
+5. The facilitator's PipeCD posts the preview as a comment on your PR within a few minutes.
 
 ## When you're done
 
