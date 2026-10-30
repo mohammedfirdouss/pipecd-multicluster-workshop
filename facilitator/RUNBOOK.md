@@ -8,7 +8,9 @@ Attendees run PipeCD and two clusters on their own laptops. Anyone who can't use
 - **PipeCD's quickstart MinIO image is gone** (pipe-cd/pipecd#7380). `setup.sh` uses Chainguard's instead.
 - **`service.yaml` needs `pipecd.dev/variant: primary`**, or traffic routing fails.
 - **Downloads:** about 1.2 GB per laptop for `setup.sh`, plus about 105 MB when piped runs its first deployment (its own kubectl and helm). Memory: about 1.9 GB.
-- Without a check (`ANALYSIS`) step, a broken update still says SUCCESS. Use a 2-minute wait for the undo exercise.
+- Without a check (`ANALYSIS`) step, a broken update still says SUCCESS.
+- **"Cancel with Rollback" did not stop a running deployment** in this PipeCD version (tested twice on 30 Oct: the deployment finished anyway). Exercise 4 therefore undoes with `git revert` + `git push`, which brought both clusters back in about 30 seconds.
+- Exercises 1–4 and the no-install PR preview were tested again from scratch on 30 Oct: Ex1 about 100s, Ex2 about 90s (canary on both clusters), Ex3 about 90s (canary on cluster1 only).
 
 ## Before the day
 
@@ -54,6 +56,7 @@ Rules of thumb:
 | No Docker, or slow download | No-install way, or pair with a neighbour |
 | Setup stuck at "downloading and starting it" | Still downloading. Check with `kubectl --context kind-cluster1 get pods -n pipecd`. After 45 minutes it stops; run `setup.sh` again, it keeps what it downloaded |
 | "Docker isn't running" | Open Docker Desktop or OrbStack first |
+| Console at localhost:8080 shows a blank page | The browser cached an older PipeCD page. Hard refresh: Cmd+Shift+R (Mac) or Ctrl+Shift+R |
 | "toomanyrequests" or rate limit | Docker Hub limits downloads per internet address. Switch to a hotspot, or `docker login` with a free Docker account |
 | `piped.sh` can't connect | Check nothing else uses port 8080 (`lsof -i :8080`), then run `./scripts/setup.sh` again (it restarts the port-forward) |
 | Deployment stuck at PENDING | Wrong piped version. Delete `~/.pipecd-workshop/bin/piped` and run `setup.sh` again |

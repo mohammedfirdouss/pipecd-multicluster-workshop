@@ -59,7 +59,7 @@ You can also watch each deployment in the browser, under **Deployments**.
 
 In `app/hello-ibadan/deployment.yaml`, change `v0.47.0` to `v0.47.1`. Preview it, then deploy it.
 
-**You should see:** `QUICK_SYNC`. PipeCD updates **both clusters at once**. What if the new version is broken?
+**You should see:** the preview says `sync strategy: QUICK_SYNC` and shows `v0.47.0` → `v0.47.1`. After you push, PipeCD updates **both clusters at once** (about a minute). What if the new version is broken?
 
 (Both clusters get the same files, so the preview shows the change once, under `cluster1`.)
 
@@ -84,7 +84,7 @@ Change the version to `v0.47.2`. In `app/hello-ibadan/app.pipecd.yaml`, add this
 
 The missing names are `K8S_MULTI_PRIMARY_ROLLOUT` and `K8S_MULTI_CANARY_CLEAN`. Which goes first?
 
-**You should see:** `PIPELINE_SYNC`. While it waits, `status.sh` shows a `canary` copy on **both** clusters.
+**You should see:** the preview says `sync strategy: AUTO` (PipeCD picks the pipeline when it deploys). Under **Deployments** it says "Sync progressively". During the 30-second wait, `status.sh` shows a `canary` copy on **both** clusters.
 
 ## Exercise 3: One cluster first
 
@@ -115,9 +115,18 @@ Why "all"? Without an extra tool like Istio, users can only go to one version at
 
 ## Exercise 4: Undo a bad update
 
-Change the `WAIT` to `2m`, and the version to `v9.9.9`, a version that doesn't exist. Deploy it. While it's waiting, open it under **Deployments** and click the arrow next to **Cancel**, then **Cancel with Rollback**. Both clusters go back to the last good version.
+Keep your Exercise 3 pipeline. Change the version to `v9.9.9`, a version that doesn't exist, then deploy it.
 
-Note: PipeCD only checks that the new version works if you add a check step (`ANALYSIS`). Without it, a broken update can still say "success".
+**You should see:** `status.sh` shows new pods stuck at `Pending`, because the image can't be downloaded. The old pods keep running. Under **Deployments**, PipeCD still says **SUCCESS**: it only checks that a new version works if you add a check step (`ANALYSIS`).
+
+Undo it the GitOps way. Git is the source of truth, so undo the commit:
+
+```sh
+git revert --no-edit HEAD
+git push
+```
+
+Within 1–2 minutes (the pipeline runs again), `status.sh` shows both clusters back on `v0.47.1` with no `Pending` pods.
 
 ## No-install way
 

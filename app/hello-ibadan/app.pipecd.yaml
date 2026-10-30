@@ -5,7 +5,7 @@ spec:
   labels:
     workshop: devfest-ibadan-2026
   # No pipeline yet: PipeCD will QUICK_SYNC this app to every cluster at once.
-  # Exercise 1 asks you to add one.
+  # Exercise 2 asks you to add one.
   plugins:
     kubernetes_multicluster:
       input:
