@@ -10,8 +10,8 @@ gh pr list --repo $REPO --state open --json number,headRefOid --jq '.[] | "\(.nu
 while read -r n sha; do
   grep -qx "$n $sha" "$HOME_DIR/previewed" 2>/dev/null && continue   # already done
   echo "previewing PR #$n"
-  # piped only reads branches from its own repo, so copy the PR there first
-  git -C "$REPO_DIR" fetch -q origin "pull/$n/head"
+  # piped only reads branches from its own repo (this folder's origin), so copy the PR there first
+  git -C "$REPO_DIR" fetch -q "https://github.com/$REPO.git" "pull/$n/head"
   git -C "$REPO_DIR" push -q -f origin "FETCH_HEAD:refs/heads/preview/pr-$n"
   result=$(pipectl plan-preview --address=localhost:8080 --insecure \
     --api-key-file="$HOME_DIR/api-key" --repo-remote-url="$REPO_URL" \
